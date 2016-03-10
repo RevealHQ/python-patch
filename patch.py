@@ -857,6 +857,16 @@ class PatchSet(object):
       filename = self.findfile(old, new)
 
       if not filename:
+        if len(p.hunks)==1 and p.hunks[0].startsrc==0 and p.hunks[0].linessrc==0:
+          filename=new
+          debug("patch creates new file "+filename)
+          # create directory
+          filenameDir=os.path.join(os.path.dirname(filename), ".")
+          if not exists(filenameDir):
+            os.makedirs(filenameDir)
+          # create empty file
+          open(filename, "a").close()
+        else:
           warning("source/target file does not exist:\n  --- %s\n  +++ %s" % (old, new))
           errors += 1
           continue
@@ -876,6 +886,7 @@ class PatchSet(object):
       hunkreplace = []
       validhunks = 0
       canpatch = False
+
       for lineno, line in enumerate(f2fp):
         if lineno+1 < hunk.startsrc:
           continue
@@ -924,7 +935,11 @@ class PatchSet(object):
               canpatch = True
               break
       else:
-        if hunkno < len(p.hunks):
+        if hunk.startsrc==0 and hunk.linessrc==0 and len(p.hunks)==1:
+          debug(" patch represents a new file")
+          validhunks=1
+          canpatch=True
+        elif hunkno < len(p.hunks):
           warning("premature end of source file %s at hunk %d" % (filename, hunkno+1))
           errors += 1
 
@@ -1097,6 +1112,10 @@ class PatchSet(object):
 
 
   def write_hunks(self, srcname, tgtname, hunks):
+    if len(hunks)==1 and hunks[0].starttgt==0 and hunks[0].linestgt==0:
+      debug("Removing target file %s" % tgtname)
+      return True
+
     src = open(srcname, "rb")
     tgt = open(tgtname, "wb")
 
