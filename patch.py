@@ -653,8 +653,10 @@ class PatchSet(object):
         if p.header[idx].startswith(b"diff --git"):
           break
       if p.header[idx].startswith(b'diff --git a/'):
-        if (idx+1 < len(p.header)
-            and re.match(b'index \\w{7}..\\w{7} \\d{6}', p.header[idx+1])):
+        if ((idx+1 < len(p.header)
+            and re.match(b'index \\w{7}..\\w{7} \\d{6}', p.header[idx+1])) or
+          (idx+1 < len(p.header)
+            and p.header[idx+1].startswith(b"new file mode 100644"))):
           if DVCS:
             return GIT
 
